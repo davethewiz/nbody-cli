@@ -1,3 +1,3 @@
 # nbody-cli
 
-A configurable nbody simulation that renders entirely in the terminal.
+A configurable nbody simulation with a terminal-based renderer
