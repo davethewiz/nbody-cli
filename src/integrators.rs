@@ -4,7 +4,7 @@ pub trait Integrator {
     fn integrate(&self, body: &mut Body, dt: f32);
 }
 
-
+#[derive(Default)]
 pub struct Verlet {}
 
 impl Integrator for Verlet {
@@ -19,6 +19,7 @@ impl Integrator for Verlet {
     }
 }
 
+#[derive(Default)]
 pub struct Euler {}
 
 impl Integrator for Euler {

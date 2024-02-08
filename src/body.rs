@@ -6,7 +6,7 @@ pub struct Body {
     pub position: Vec2,
     pub velocity: Vec2,
     pub acceleration: Vec2,
-    pub force: Vec2
+    pub force: Vec2,
 }
 
 impl Body {
@@ -16,7 +16,7 @@ impl Body {
             position,
             velocity,
             acceleration: Vec2::ZERO,
-            force: Vec2::ZERO
+            force: Vec2::ZERO,
         }
     }
 

@@ -1,94 +1,46 @@
-use std::io::{stdout, Result, Write};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
-use crossterm::cursor::MoveToNextLine;
-use glam::IVec2;
+use glam::Vec2;
+use nbody_cli::body::Body;
+use nbody_cli::integrators::Verlet;
+use nbody_cli::render::TerminalRender;
+use nbody_cli::simulation::{Gravity, SimComponent, Simulation};
 
-use crossterm::queue;
-use crossterm::{
-    execute, 
-    style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor}, 
-    terminal::{Clear, ClearType, EnterAlternateScreen},
-    cursor
-};
+fn get_bodies() -> Vec<Body> {
+    let mut bodies = vec![];
 
-fn init_terminal() -> Result<()> {
-    execute!(
-        stdout(),
-        EnterAlternateScreen,
-        cursor::Hide,
-    )?;
+    for x in (-40..40).step_by(2) {
+        for y in (-20..20).step_by(2) {
+            bodies.push(Body::new(1.0, Vec2::ZERO, Vec2::new(x as f32, y as f32)));
+        }
+    }
 
-    Ok(())
+    bodies
 }
 
-const screen_size: IVec2 = IVec2::new(200, 45);
+fn main() {
+    let gravity = Box::new(Gravity::new(0.1, 1.0));
+    let renderer = Box::new(TerminalRender::new());
+    let components: Vec<Box<dyn SimComponent>> = vec![gravity, renderer];
 
-fn main() -> Result<()> {
-    let mut n = 0;
+    let integrator = Box::new(Verlet::default());
 
-    let dt = 1.0;// / 60.0;
+    let bodies = get_bodies();
+    let mut sim = Simulation::new(bodies, components, integrator);
+    
+    sim.start();
 
-    init_terminal()?;
-
-    let mut stdout = stdout();
-
+    let dt: f64 = 1.0 / 10.0;
     loop {
         let frame_start = SystemTime::now();
-        
-        execute!(
-            stdout,
-            Clear(ClearType::All),
-            cursor::MoveTo(0, 0),
-            Print(n.to_string() + "░▒▓█"),
-            cursor::MoveTo(1, 1),
-        )?;
 
-        for _ in 0..screen_size.x {
-            queue!(stdout, Print("-"))?;
-        }
-
-        queue!(stdout, 
-            cursor::MoveToNextLine(1),
-        )?;
-
-        for i in 0..screen_size.y {
-            queue!(stdout,
-                Print("|")
-            )?;
-
-            for _ in 0..screen_size.x {
-                queue!(
-                    stdout,
-                    Print(" ")
-                )?;
-            }
-            queue!(stdout,
-                Print("|".to_owned() + &(i+1).to_string()),
-                cursor::MoveToNextLine(1),
-            )?;
-        }
-
-        queue!(stdout, 
-            cursor::MoveRight(1),
-        )?;
-
-        for _ in 0..screen_size.x {
-            queue!(stdout, Print("-"))?;
-        }
-
-
-        n += 1;
+        sim.run(dt as f32);
 
         let elapsed = frame_start.elapsed().unwrap();
 
-        queue!(stdout, MoveToNextLine(1), Print(elapsed.as_millis()))?;
-
-        stdout.flush()?;
-
-        sleep(Duration::from_secs_f64(dt) - elapsed);
+        if elapsed.as_secs_f64() < dt {
+            sleep(Duration::from_secs_f64(dt) - elapsed);
+        }
     }
-    
-    Ok(())
 }
